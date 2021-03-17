@@ -35,6 +35,11 @@ class AstReverter
             }
         }
 
+        // AST_COALESCE is deprecated.
+        if (defined('\ast\AST_COALESCE') && $node->kind === \ast\AST_COALESCE) {
+            return $this->coalesce($node);
+        }
+
         switch ($node->kind) {
             case \ast\AST_ARG_LIST:
                 return $this->argList($node);
@@ -72,8 +77,6 @@ class AstReverter
                 return $this->closure($node);
             case \ast\AST_CLOSURE_VAR:
                 return $this->closureVar($node);
-            case \ast\AST_COALESCE:
-                return $this->coalesce($node);
             case \ast\AST_CONDITIONAL:
                 return $this->conditional($node);
             case \ast\AST_CONST:
@@ -218,9 +221,70 @@ class AstReverter
                 return $this->yield($node);
             case \ast\AST_YIELD_FROM:
                 return $this->yieldFrom($node);
+            case \ast\AST_PROP_GROUP:
+                return $this->propGroup($node);
+            case \ast\AST_CLASS_NAME:
+                return $this->classNames($node);
             default:
                 throw new Exception('Unknown AST kind (' . \ast\get_kind_name($node->kind) . ') found.');
         }
+    }
+
+    private function classNames(Node $node) : string
+    {
+        $cls = $node->children['class']->children['name'];
+        return "{$cls}::class";
+    }
+
+    private function propGroup(Node $node) : string
+    {
+        if ($node->children['props']->kind !== \ast\AST_PROP_DECL) {
+            throw new Exception('Invalid AST kind (' . \ast\get_kind_name($node->children['props']->kind) . ') for AST_PROP_DECL.');
+        }
+
+        $var  = $node->children['props']->children[0];
+        $type = $node->children['type'];
+        $code = '';
+
+        if ($var->children['docComment']) {
+          $code .= $var->children['docComment'] . PHP_EOL . $this->indent();
+        }
+
+        // (public|protected|private)(static)?
+        switch ($node->flags) {
+            case \ast\flags\MODIFIER_PUBLIC:
+                $code .= 'public ';
+                break;
+            case \ast\flags\MODIFIER_PUBLIC | \ast\flags\MODIFIER_STATIC:
+                $code .= 'public static ';
+                break;
+            case \ast\flags\MODIFIER_PROTECTED:
+                $code .= 'protected ';
+                break;
+            case \ast\flags\MODIFIER_PROTECTED | \ast\flags\MODIFIER_STATIC:
+                $code .= 'protected static ';
+                break;
+            case \ast\flags\MODIFIER_PRIVATE:
+                $code .= 'private ';
+                break;
+            case \ast\flags\MODIFIER_PRIVATE | \ast\flags\MODIFIER_STATIC:
+                $code .= 'private static ';
+                break;
+            default:
+                throw new Exception('Invalid modifier (' . $node->flags . ')');
+        }
+
+        if ($type) {
+          $code .= $this->revertAST($type) . ' ';
+        }
+
+        $code .= '$' . $var->children['name'];
+
+        if ($var->children['default'] !== null) {
+            $code .= ' = ' . $this->revertAST($var->children['default']);
+        }
+
+        return $code;
     }
 
     /**
