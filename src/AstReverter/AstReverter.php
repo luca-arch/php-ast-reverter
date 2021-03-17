@@ -846,6 +846,15 @@ class AstReverter
 
     private function conditional(Node $node) : string
     {
+        // Parse ?: syntax.
+        if ($node->children['true'] === NULL) {
+            return '('
+                . $this->revertAST($node->children['cond'])
+                . ' ?: '
+                . $this->revertAST($node->children['false'])
+                . ')';
+        }
+
         return '('
             . $this->revertAST($node->children['cond'])
             . ' ? '
