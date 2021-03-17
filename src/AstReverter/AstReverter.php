@@ -4,8 +4,7 @@ namespace AstReverter;
 
 use ast\Node;
 use ast\Node\Decl;
-
-ini_set('assert.exception', 1);
+use Exception;
 
 class AstReverter
 {
@@ -32,7 +31,7 @@ class AstReverter
                     return '"' . $this->sanitiseString($node) . '"';
                 default:
                     // an array, null, etc, should never come through here
-                    assert(false, 'Unknown type ('. gettype($node) . ') found.');
+                    throw new Exception('Unknown type ('. gettype($node) . ') found.');
             }
         }
 
@@ -220,7 +219,7 @@ class AstReverter
             case \ast\AST_YIELD_FROM:
                 return $this->yieldFrom($node);
             default:
-                assert(false, 'Unknown AST kind (' . \ast\get_kind_name($node->kind) . ') found.');
+                throw new Exception('Unknown AST kind (' . \ast\get_kind_name($node->kind) . ') found.');
         }
     }
 
@@ -310,7 +309,7 @@ class AstReverter
                 $closing = ']';
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_ARRAY found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_ARRAY found.");
         }
 
         if ($node->children !== []) {
@@ -390,7 +389,7 @@ class AstReverter
                 $op = '>>=';
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_ASSIGN_OP found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_ASSIGN_OP found.");
         }
 
         return $this->revertAST($node->children['var'])
@@ -488,7 +487,7 @@ class AstReverter
                 $op = '<=>';
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_BINARY_OP found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_BINARY_OP found.");
         }
 
         $buffer = [];
@@ -553,7 +552,7 @@ class AstReverter
                 $code .= 'object';
                 break;
             default:
-                assert(false, "Unknown cast type ({$node->flags}) for AST_CAST found.");
+                throw new Exception("Unknown cast type ({$node->flags}) for AST_CAST found.");
         }
 
         $code .= ') ' . $this->revertAST($node->children['expr']);
@@ -631,7 +630,7 @@ class AstReverter
                 // anonymous class
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_CLASS found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_CLASS found.");
         }
 
         if ($node->children['extends'] !== null) {
@@ -815,7 +814,7 @@ class AstReverter
                 // nothing to do - for PHP 7.0
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_CONST_DECL found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_CONST_DECL found.");
         }
 
         if ($setConst) {
@@ -1187,7 +1186,7 @@ class AstReverter
                 $code .= "eval({$arg})";
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_INCLUDE_OR_EVAL found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_INCLUDE_OR_EVAL found.");
         }
 
         return $code;
@@ -1246,7 +1245,7 @@ class AstReverter
             case \ast\flags\MAGIC_CLASS:
                 return '__CLASS__';
             default:
-                assert(false, "Unknown flag ({$node->flags}) for T_MAGIC_CONST found.");
+                throw new Exception("Unknown flag ({$node->flags}) for T_MAGIC_CONST found.");
         }
     }
 
@@ -1391,7 +1390,7 @@ class AstReverter
                 $returnsRef = '&';
                 break;
             default:
-                assert(false, "Unknown flag(s) ({$node->flags}) for AST_METHOD found.");
+                throw new Exception("Unknown flag(s) ({$node->flags}) for AST_METHOD found.");
         }
 
         $code .= $scope
@@ -1457,7 +1456,7 @@ class AstReverter
                 // nothing to do
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_PARAM found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_PARAM found.");
         }
 
         $code .= $node->children['name'];
@@ -1606,7 +1605,7 @@ class AstReverter
                 $scope = 'private static';
                 break;
             default:
-                assert(false, "Unknown flag(s) ({$node->flags}) for AST_PROP_DECL found.");
+                throw new Exception("Unknown flag(s) ({$node->flags}) for AST_PROP_DECL found.");
         }
 
         $code .= $scope . $this->commaSeparatedValues($node, ',');
@@ -1830,7 +1829,7 @@ class AstReverter
                 break;
             default:
                 // if there's no flag, then the value will be 0
-                // assert(false, "Unknown flag ({$node->flags}) for AST_TRAIT_ALIAS found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_TRAIT_ALIAS found.");
         }
 
         $code .= $node->children['alias'];
@@ -1894,7 +1893,7 @@ class AstReverter
             case \ast\flags\TYPE_VOID:
                 return 'void';
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_TYPE found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_TYPE found.");
         }
     }
 
@@ -1919,7 +1918,7 @@ class AstReverter
                 $code .= '-';
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_UNARY_OP found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_UNARY_OP found.");
         }
 
         $code .= $this->revertAST($node->children['expr']);
@@ -1968,7 +1967,7 @@ class AstReverter
                 // denotes no flags are set
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_USE or AST_GROUP_USE found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_USE or AST_GROUP_USE found.");
         }
 
         return $code;
@@ -1992,7 +1991,7 @@ class AstReverter
                 // denotes no flags are set
                 break;
             default:
-                assert(false, "Unknown flag ({$node->flags}) for AST_USE_ELEM found.");
+                throw new Exception("Unknown flag ({$node->flags}) for AST_USE_ELEM found.");
         }
 
         $code .= $node->children['name'];
