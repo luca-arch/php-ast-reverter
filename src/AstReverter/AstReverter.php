@@ -19,7 +19,7 @@ class AstReverter
         // nothing to do
     }
 
-    private function revertAST($node) : string
+    private function revertAST($node, $isAbstractCall = false) : string
     {
         if (!$node instanceof Node) {
             switch (gettype($node)) {
@@ -98,7 +98,7 @@ class AstReverter
             case \ast\AST_EMPTY:
                 return $this->empty($node);
             case \ast\AST_ENCAPS_LIST:
-                return $this->encapsList($node);
+                return $this->encapsList($node, $isAbstractCall=$isAbstractCall);
             case \ast\AST_EXIT:
                 return $this->exit($node);
             case \ast\AST_EXPR_LIST:
@@ -304,7 +304,7 @@ class AstReverter
         $code .= $op;
 
         if ($rhs instanceof Node) {
-            $code .= $this->revertAST($rhs);
+          $code .= $this->revertAST($rhs, $isAbstractCall=true);
         } else {
             $code .= $rhs;
         }
@@ -989,19 +989,19 @@ class AstReverter
         return 'empty(' . $this->revertAST($node->children['expr']) . ')';
     }
 
-    private function encapsList(Node $node) : string
+    private function encapsList(Node $node, $isAbstractCall = false) : string
     {
-        $code = '"';
+        $code = $isAbstractCall ? '{"' : '"';
 
         foreach ($node->children as $child) {
             if ($child instanceof Node) {
-                $code .= '{' . $this->revertAST($child) . '}';
+                $code .= '{' . $this->revertAST($child, $isAbstractCall=true) . '}';
             } else {
                 $code .= $this->sanitiseString($child);
             }
         }
 
-        $code .= '"';
+        $code .= $isAbstractCall ? '"}' : '"';
 
         return $code;
     }
